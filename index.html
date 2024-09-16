@@ -3,11 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Engine</title>
-    <link rel="stylesheet" href="src/css/style.css">
+    <title>Mine Blast</title>
+    <link rel="stylesheet" href="src/css/styles.css"> <!-- Correct path to CSS -->
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <script src="src/js/game.js"></script>
+    <div id="goalsPanel">
+        <h2>Goals</h2>
+        <p id="goalsText">Match 3 tiles of the same color!</p>
+    </div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <script type="module" src="src/js/game.js"></script> <!-- Correct path to JavaScript -->
 </body>
 </html>
