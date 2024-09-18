@@ -9,8 +9,15 @@ const cols = 10;     // Number of columns
 let board = [];
 
 const animationSpeed = 300; // Animation duration in ms
-const tileTypes = ['#FF5733', '#33FF57', '#3357FF', '#FF33A8', '#FFD433']; // Example colors for tiles
 
+// Define the gradient stops for tiles
+const gradientDefinitions = [
+    ['#FF5733', '#FF8D33'], // Red-Orange Gradient
+    ['#33FF57', '#33FFAA'], // Green Gradient
+    ['#3357FF', '#33AAFF'], // Blue Gradient
+    ['#FF33A8', '#FF66D9'], // Pink Gradient
+    ['#FFD433', '#FFF433']  // Yellow Gradient
+];
 
 // Goals
 const goals = {
@@ -24,14 +31,22 @@ function updateGoals() {
     goalsText.textContent = goals.description; // Set the goal description
 }
 
-// Initialize the board with random tiles
+// Create gradient based on tile position and size
+function createTileGradient(ctx, x, y, size, gradientDefinition) {
+    const gradient = ctx.createLinearGradient(x, y, x + size, y + size); // Linear gradient
+    gradient.addColorStop(0, gradientDefinition[0]);  // Start color
+    gradient.addColorStop(1, gradientDefinition[1]);  // End color
+    return gradient;
+}
+
+// Initialize the board with random gradient indices
 function initializeBoard() {
     board = []; // Clear board on initialization
     for (let row = 0; row < rows; row++) {
         const rowArray = [];
         for (let col = 0; col < cols; col++) {
-            const randomTile = tileTypes[Math.floor(Math.random() * tileTypes.length)];
-            rowArray.push(randomTile);
+            const randomGradientIndex = Math.floor(Math.random() * gradientDefinitions.length);
+            rowArray.push(randomGradientIndex); // Store the gradient index
         }
         board.push(rowArray);
     }
@@ -43,19 +58,22 @@ function drawBoard() {
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas before each redraw
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
-            const tileColor = board[row][col];
-            if (tileColor) {
-                drawTile(col * tileSize, row * tileSize, tileSize, tileColor);
+            const tileGradientIndex = board[row][col];
+            if (tileGradientIndex !== null) {
+                drawTile(col * tileSize, row * tileSize, tileSize, tileGradientIndex);
             }
         }
     }
 }
 
-// Draw a single tile (with animation if necessary)
-function drawTile(x, y, size, color, scale = 1, opacity = 1) {
+// Draw a single tile (with gradient, animation if necessary)
+function drawTile(x, y, size, colorIndex, scale = 1, opacity = 1) {
+    const gradientDefinition = gradientDefinitions[colorIndex]; // Fetch the corresponding gradient stops
+    const gradient = createTileGradient(ctx, x, y, size, gradientDefinition); // Create the gradient
+
     ctx.save();
     ctx.globalAlpha = opacity;
-    ctx.fillStyle = color;
+    ctx.fillStyle = gradient; // Use gradient as the fill style
     ctx.translate(x + size / 2, y + size / 2); // Translate to the center of the tile
     ctx.scale(scale, scale); // Apply scaling
     ctx.fillRect(-size / 2, -size / 2, size, size); // Draw the tile centered
@@ -87,15 +105,15 @@ function handleTileClick(row, col) {
         return; // Exit the function if the click is outside the board
     }
 
-    const clickedTileColor = board[row][col];
+    const clickedTileIndex = board[row][col];
 
     // Ensure the clicked tile is valid (not null or undefined)
-    if (!clickedTileColor) {
+    if (clickedTileIndex === null) {
         console.log('Invalid tile clicked.');
         return;
     }
 
-    const matchingTiles = findMatchingTiles(row, col, clickedTileColor);
+    const matchingTiles = findMatchingTiles(row, col, clickedTileIndex);
 
     if (matchingTiles.length >= goals.matchCount) {
         animateTileDisappearance(matchingTiles, tileSize, board, ctx, animationSpeed, drawTile, drawBoard, () => {
@@ -105,20 +123,19 @@ function handleTileClick(row, col) {
     }
 }
 
-
 // Find all tiles in a cluster (recursive flood fill)
-function findMatchingTiles(row, col, color, visited = new Set()) {
+function findMatchingTiles(row, col, colorIndex, visited = new Set()) {
     if (row < 0 || row >= rows || col < 0 || col >= cols) return [];
     const key = `${row},${col}`;
-    if (visited.has(key) || board[row][col] !== color) return [];
+    if (visited.has(key) || board[row][col] !== colorIndex) return [];
 
     visited.add(key);
 
     const matchingTiles = [{ row, col }];
-    matchingTiles.push(...findMatchingTiles(row - 1, col, color, visited)); // Up
-    matchingTiles.push(...findMatchingTiles(row + 1, col, color, visited)); // Down
-    matchingTiles.push(...findMatchingTiles(row, col - 1, color, visited)); // Left
-    matchingTiles.push(...findMatchingTiles(row, col + 1, color, visited)); // Right
+    matchingTiles.push(...findMatchingTiles(row - 1, col, colorIndex, visited)); // Up
+    matchingTiles.push(...findMatchingTiles(row + 1, col, colorIndex, visited)); // Down
+    matchingTiles.push(...findMatchingTiles(row, col - 1, colorIndex, visited)); // Left
+    matchingTiles.push(...findMatchingTiles(row, col + 1, colorIndex, visited)); // Right
 
     return matchingTiles;
 }
@@ -165,8 +182,8 @@ function refillBoard() {
     for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
             if (board[row][col] === null) {
-                const randomTile = tileTypes[Math.floor(Math.random() * tileTypes.length)];
-                board[row][col] = randomTile;
+                const randomGradientIndex = Math.floor(Math.random() * gradientDefinitions.length);
+                board[row][col] = randomGradientIndex;
             }
         }
     }
